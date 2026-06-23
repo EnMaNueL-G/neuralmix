@@ -1,0 +1,18 @@
+# Dependencias y binarios pesados
+node_modules/
+python/venv/
+python/__pycache__/
+dist/
+*.log
+
+# Datos de usuario / pruebas / temporales
+test-clips/
+test-audio/
+*.tmp
+*.bak
+_*.js
+Salidas-Logs/
+
+# Sistema
+.DS_Store
+Thumbs.db

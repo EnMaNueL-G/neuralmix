@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>NeuralMix Pro</title>
+<style>
+  :root{
+    --bg:#08080f;--bg2:#0c0c18;--panel:#13131f;--panel2:#1a1a2b;--border:#262638;
+    --text:#ececf7;--muted:#9a9ac0;--muted2:#5a5a78;--acc:#d946ef;--acc2:#22d3ee;
+    --grad:linear-gradient(135deg,var(--acc),var(--acc2));--ok:#22c55e;--err:#ef4444;--warn:#f59e0b;
+    --voc:#f43f5e;--drm:#f59e0b;--bas:#8b5cf6;--oth:#22d3ee;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;font-size:12.5px;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+  header{display:flex;align-items:center;gap:11px;padding:8px 14px;border-bottom:1px solid var(--border);background:var(--bg2);flex:0 0 auto}
+  .logo{display:flex;align-items:center;gap:9px}
+  .logo .mark{width:30px;height:30px;border-radius:9px;background:var(--grad);display:grid;place-items:center}
+  .logo .mark svg{width:18px;height:18px}
+  .logo h1{font-size:15px;font-weight:800}.logo h1 span{background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .logo .sub{font-size:10px;color:var(--muted)}
+  .spacer{flex:1}
+  .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;background:var(--panel);border:1px solid var(--border);color:var(--muted)}
+  .pill .dot{width:7px;height:7px;border-radius:50%;background:var(--muted2)}.pill.ok .dot{background:var(--ok);box-shadow:0 0 7px var(--ok)}
+  .hbtn{background:var(--panel);border:1px solid var(--border);color:var(--muted);border-radius:7px;padding:5px 10px;font-size:11.5px;font-weight:600;cursor:pointer}
+  .hbtn:hover{color:var(--text);border-color:var(--acc)}.hbtn.heart{color:#fb7185}
+  .hbtn.on{background:var(--grad);color:#fff;border-color:transparent}
+  .vizoverlay{position:fixed;inset:0;background:#000;z-index:80;display:none}
+  .vizoverlay.show{display:block}
+  #vizCam{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;pointer-events:none}
+  #vizCanvas{position:absolute;inset:0;width:100%;height:100%}
+  .vizbrand{position:absolute;top:6%;left:0;right:0;text-align:center;font-size:54px;font-weight:900;letter-spacing:2px;pointer-events:none}
+  .vizbrand span{background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-shadow:0 0 40px #d946ef55}
+  .viztext{position:absolute;bottom:13%;left:50%;transform:translateX(-50%);width:60%;max-width:700px;text-align:center;background:transparent;border:1px solid transparent;color:#fff;border-radius:10px;padding:10px 16px;font-size:28px;font-weight:800;font-family:inherit;text-shadow:0 2px 14px #000}
+  .viztext::placeholder{color:transparent}
+  .viztext:focus{outline:none;background:#00000066;border-color:var(--acc)}
+  .viztext:focus::placeholder{color:#ffffff55}
+  .vizctrls{position:absolute;top:16px;right:16px;display:flex;gap:8px}
+  .vizctrls button{background:#ffffff14;border:1px solid #ffffff33;color:#fff;border-radius:9px;padding:8px 13px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+  .vizctrls button:hover{background:#ffffff26}
+  .vizctrls button.on{background:var(--grad);border-color:transparent}
+  .vizclose{position:absolute;top:16px;left:16px;background:var(--grad);border:none;color:#fff;border-radius:9px;padding:9px 16px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;box-shadow:0 4px 16px #0008;z-index:2}
+  .vizclose:hover{filter:brightness(1.1)}
+  .vizoverlay.clean .vizctrls,.vizoverlay.clean .vizbrand{display:none}
+  .vizoverlay.clean.showctrls .vizctrls{display:flex}
+
+  main{flex:1 1 auto;min-height:0;display:flex}
+  .left{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;min-height:0}
+  .left.has4{overflow-y:auto}
+  .right{flex:0 0 300px;border-left:1px solid var(--border);background:var(--bg2);display:flex;flex-direction:column;min-height:0}
+
+  /* WAVEFORMS (estilo Serato) */
+  .waves{flex:0 0 auto;padding:8px 8px 0;display:flex;flex-direction:column;gap:5px}
+  .wlane{position:relative;height:72px;background:#05050c;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+  .wlane canvas{position:absolute;inset:0;width:100%;height:100%;cursor:pointer}
+  .winfo{position:absolute;top:5px;left:9px;right:9px;display:flex;align-items:center;gap:8px;pointer-events:none;font-size:11px;text-shadow:0 1px 3px #000}
+  .winfo .dl{font-weight:800;font-size:11px;color:var(--acc)}
+  .wlane.B .winfo .dl{color:var(--acc2)}
+  .winfo .nm{font-weight:700;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .winfo .cam{padding:0 6px;border-radius:4px;font-weight:700;background:#22d3ee22;color:var(--acc2)}
+  .winfo .tm{font-variant-numeric:tabular-nums;color:var(--muted)}
+
+  /* DECKS C/D (colapsable) */
+  .deck4{flex:0 0 auto;border-top:2px solid var(--acc)}
+  .deck4 .wlane{height:42px}
+  .deck4 .waves{padding-top:6px}
+  .deck4 canvas.jog{width:64px;height:64px}
+
+  /* MINI-VISUALIZADOR central */
+  .miniviz{flex:0 0 auto;height:30px;margin:2px 8px 0;border-radius:7px;overflow:hidden;background:#05050c;border:1px solid var(--border)}
+  #miniViz{width:100%;height:100%;display:block}
+
+  /* DECKS + MIXER */
+  .console{flex:0 0 auto;display:flex;gap:8px;padding:8px}
+  .deckpanel{flex:1 1 0;min-width:0;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:8px;display:flex;gap:9px}
+  .deckpanel.B{border-color:#22d3ee22}
+  .jogwrap{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:5px}
+  canvas.jog{width:78px;height:78px;cursor:grab;border-radius:50%}
+  canvas.jog:active{cursor:grabbing}
+  .jogbtns{display:flex;gap:5px}
+  .dcol{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+  .row{display:flex;align-items:center;gap:6px}
+  .tbtn{border:1px solid var(--border);background:var(--bg2);color:var(--text);border-radius:7px;padding:6px 9px;font-weight:700;cursor:pointer;font-size:11.5px}
+  .tbtn:hover{border-color:var(--acc)}
+  .tbtn.play{background:var(--grad);border-color:transparent;color:#fff;flex:1}
+  .tbtn.cue{min-width:48px}
+  .tbtn.sync.on{background:var(--ok);border-color:transparent;color:#04120a}
+  .tbtn.key{padding:6px 8px} .tbtn.key.on{background:var(--acc2);border-color:transparent;color:#04121a}
+  .lbl{font-size:9px;color:var(--muted2);text-transform:uppercase;letter-spacing:.4px}
+  .tempo{flex:1}
+  .pads{display:flex;gap:3px;flex-wrap:nowrap;align-items:center}
+  .pad{border:1px solid var(--border);background:var(--bg2);color:var(--muted);border-radius:5px;padding:3px 4px;font-size:10px;font-weight:700;cursor:pointer;min-width:18px;text-align:center}
+  .pad:hover{border-color:var(--acc);color:var(--text)}
+  .pad.set{background:#d946ef22;color:#fff;border-color:var(--acc)}
+  .pad.loop.on{background:var(--warn);color:#1a1200;border-color:transparent}
+  .pad.stem.on[data-stem=vocals]{background:var(--voc);color:#fff;border-color:transparent}
+  .pad.stem.on[data-stem=drums]{background:var(--drm);color:#1a1200;border-color:transparent}
+  .pad.stem.on[data-stem=bass]{background:var(--bas);color:#fff;border-color:transparent}
+  .pad.stem.on[data-stem=other]{background:var(--oth);color:#04121a;border-color:transparent}
+  .fx{display:flex;gap:8px;align-items:center}
+  .fxk{display:flex;flex-direction:column;align-items:center;gap:2px}
+  .fxk input{width:46px}
+
+  /* CENTER MIXER */
+  .mix{flex:0 0 372px;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:8px;display:flex;gap:5px}
+  .chs{flex:1;min-width:0;display:flex;gap:3px;justify-content:center}
+  .ch{display:flex;flex-direction:column;align-items:center;gap:3px}
+  .ch .kl{font-size:8px;color:var(--muted2);text-transform:uppercase;cursor:pointer;user-select:none}
+  .ch .kl:hover{color:var(--text)} .ch .kl.killed{color:var(--err)}
+  .ch input[type=range]{writing-mode:vertical-lr;direction:rtl;width:16px;height:68px}
+  .perf .pad{min-width:24px;padding:3px 5px}
+  .perf .pad.act{background:var(--warn);color:#1a1200;border-color:transparent}
+  .fx select{background:var(--bg2);border:1px solid var(--border);color:var(--text);border-radius:5px;font-size:10px;padding:2px 3px;font-family:inherit}
+  .fx input{flex:1}
+  .sampler{display:flex;align-items:center;gap:8px;padding:4px 8px;flex:0 0 auto}
+  .slbl{font-size:8.5px;color:var(--muted2);text-transform:uppercase;letter-spacing:.5px;line-height:1.1;flex:0 0 auto;text-align:center}
+  .spads{display:flex;gap:5px;flex:1}
+  .spad{flex:1;min-width:0;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:7px 4px;font-size:10.5px;font-weight:700;color:var(--muted);cursor:pointer;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .spad:hover{border-color:var(--acc);color:var(--text)} .spad.full{color:var(--text);border-color:#ffffff22}
+  .spad.empty{color:var(--muted2);border-style:dashed} .spad.hit{background:var(--grad);color:#fff;border-color:transparent}
+  .search{flex:1;max-width:240px;margin:0 8px;background:var(--bg2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:3px 8px;font-size:11px;font-family:inherit}
+  .search:focus{outline:none;border-color:var(--acc)}
+  thead th{cursor:pointer} thead th:hover{color:var(--text)}
+  .cmid{flex:0 0 78px;display:flex;flex-direction:column;align-items:center;gap:6px}
+  .vu{width:100%;height:7px;background:#05050c;border-radius:4px;overflow:hidden}.vu>i{display:block;height:100%;width:0;background:linear-gradient(90deg,#22c55e,#f59e0b,#ef4444)}
+  .mrow{display:flex;align-items:center;gap:5px;width:100%}.mrow input{flex:1}.xlbl{font-size:10px;font-weight:700;color:var(--muted)}
+  .cbtns{display:flex;flex-direction:column;gap:5px;width:100%}
+  .cbtns .tbtn{text-align:center;padding:5px}
+  .tbtn.rec.on{background:var(--err);border-color:transparent;color:#fff}.tbtn.auto.on{background:var(--ok);border-color:transparent;color:#04120a}
+
+  /* LIBRARY */
+  .libwrap{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;padding:0 8px 8px}
+  .libhead{display:flex;align-items:center;justify-content:space-between;padding:3px 2px}
+  .libhead h2{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+  .sources{display:flex;gap:5px;flex-wrap:wrap;padding:2px 0 5px}
+  .src-chip{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:999px;background:var(--bg2);border:1px solid var(--border);color:var(--muted);cursor:pointer}
+  .src-chip:hover{color:var(--text);border-color:var(--acc)} .src-chip.on{background:var(--grad);color:#fff;border-color:transparent}
+  .drop{border:1px dashed var(--border);border-radius:7px;padding:5px;text-align:center;cursor:pointer;font-size:11px;color:var(--muted);margin-bottom:5px}
+  .drop:hover{border-color:var(--acc)}.drop.drag{border-color:var(--acc2)}
+  .libtbl{flex:1 1 auto;min-height:0;overflow-y:auto;border:1px solid var(--border);border-radius:9px;background:var(--panel)}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  thead th{position:sticky;top:0;background:var(--panel2);color:var(--muted);font-size:9.5px;text-transform:uppercase;text-align:left;padding:6px 8px;border-bottom:1px solid var(--border)}
+  tbody td{padding:5px 8px;border-bottom:1px solid #ffffff08}tbody tr:hover{background:#ffffff07}
+  .tname{max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+  .cam2{padding:1px 6px;border-radius:4px;font-weight:700;font-size:11px;background:#22d3ee18;color:var(--acc2);border:1px solid #22d3ee30}
+  .ldbtn{border:1px solid var(--border);background:var(--bg2);color:var(--acc2);border-radius:5px;padding:2px 8px;font-weight:700;cursor:pointer;font-size:10.5px}
+  .ldbtn:hover{border-color:var(--acc);color:var(--text)}.ldbtn.b{color:var(--acc)}
+  .miniact{background:none;border:none;color:var(--muted2);cursor:pointer;font-size:12px;padding:0 2px}.miniact.stems{color:var(--acc2)}.miniact:hover{filter:brightness(1.3)}
+  .empty{padding:16px;text-align:center;color:var(--muted2)}
+
+  /* CO-PILOT */
+  .cphead{padding:9px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:7px}.cphead h2{font-size:12.5px;font-weight:800}
+  .cpbody{flex:1 1 auto;min-height:0;overflow-y:auto;padding:10px 12px}
+  .cpempty{color:var(--muted2);text-align:center;padding:20px 6px;font-size:12px;line-height:1.6}
+  .nowcard{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:9px;margin-bottom:10px}
+  .nowcard .lab{font-size:9.5px;color:var(--acc);text-transform:uppercase;letter-spacing:1px;font-weight:700}
+  .nowcard .nm{font-weight:700;margin:3px 0 6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
+  .nowmeta{display:flex;gap:6px;flex-wrap:wrap;font-size:11px;color:var(--muted)}
+  .spark{display:flex;align-items:flex-end;gap:1px;height:24px;margin-top:7px}.spark i{flex:1;background:var(--grad);border-radius:1px;min-height:2px;opacity:.85}
+  .sg{background:var(--panel);border:1px solid var(--border);border-radius:9px;padding:8px 9px;margin-bottom:7px}
+  .sg .top{display:flex;align-items:center;gap:7px;margin-bottom:4px}
+  .sg .sc{font-size:16px;font-weight:800;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;min-width:40px}
+  .sg .nm{font-weight:600;font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+  .sg .meta{font-size:10.5px;color:var(--muted)}
+  .sg .factors{display:flex;gap:4px;flex-wrap:wrap;margin:4px 0}
+  .fac{font-size:9.5px;padding:1px 5px;border-radius:4px;background:var(--bg2);border:1px solid var(--border);color:var(--muted)}.fac b{color:var(--text)}
+  .sg .tr{font-size:10.5px;color:var(--acc2);font-weight:600;margin-bottom:5px}
+
+  footer{flex:0 0 auto;display:flex;gap:9px;align-items:center;padding:6px 14px;border-top:1px solid var(--border);background:var(--bg2)}
+  footer .info{font-size:11px;color:var(--muted);flex:1}
+
+  .overlay{position:fixed;inset:0;background:#05050bcc;display:none;align-items:center;justify-content:center;z-index:50}.overlay.show{display:flex}
+  .modal{width:430px;max-width:92vw;background:var(--panel);border:1px solid var(--border);border-radius:13px;padding:18px}
+  .modal h3{font-size:15px;margin-bottom:4px}.modal .by{color:var(--muted);font-size:12px;margin-bottom:11px}
+  .modal .links{display:flex;gap:8px;margin:5px 0;flex-wrap:wrap}.modal .links a{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:11.5px;color:var(--text);text-decoration:none}.modal .links a:hover{border-color:var(--acc)}
+  .modal .mrow2{display:flex;gap:6px;align-items:center;margin-bottom:7px}.modal .lbl2{font-size:10px;color:var(--muted);text-transform:uppercase;width:84px;flex:0 0 auto}
+  .modal .val{flex:1;font-size:11.5px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:monospace}
+  .modal .copy{background:var(--bg2);border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:6px 9px;cursor:pointer;font-size:10.5px}.modal .copy.done{color:var(--ok);border-color:var(--ok)}
+  .modal .close{width:100%;margin-top:11px;padding:8px;border-radius:8px;background:var(--grad);color:#fff;border:none;font-weight:700;cursor:pointer}
+  .modal .note{font-size:10.5px;color:var(--muted2);margin-top:8px;line-height:1.5}
+  .srow{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+  .slbl2{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+  .seg2{display:flex;gap:6px}
+  .seg2 button{flex:1;padding:8px;border-radius:8px;background:var(--bg2);border:1px solid var(--border);color:var(--muted);font-weight:600;cursor:pointer;font-size:12px}
+  .seg2 button.on{background:var(--grad);color:#fff;border-color:transparent}
+  .themes{display:flex;gap:8px}
+  .tdot{width:30px;height:30px;border-radius:50%;border:2px solid var(--border);cursor:pointer}
+  .tdot.on{border-color:#fff;box-shadow:0 0 0 2px var(--acc)}
+</style>
+</head>
+<body>
+  <header>
+    <div class="logo"><div class="mark"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="2.7" fill="#fff"/><g stroke="#fff" stroke-width="1.7" stroke-linecap="round"><line x1="12" y1="6.6" x2="12" y2="3.2" transform="rotate(0 12 12)"/><line x1="12" y1="6.6" x2="12" y2="4.5" transform="rotate(30 12 12)"/><line x1="12" y1="6.6" x2="12" y2="3.4" transform="rotate(60 12 12)"/><line x1="12" y1="6.6" x2="12" y2="4.7" transform="rotate(90 12 12)"/><line x1="12" y1="6.6" x2="12" y2="3.2" transform="rotate(120 12 12)"/><line x1="12" y1="6.6" x2="12" y2="4.5" transform="rotate(150 12 12)"/><line x1="12" y1="6.6" x2="12" y2="3.4" transform="rotate(180 12 12)"/><line x1="12" y1="6.6" x2="12" y2="4.7" transform="rotate(210 12 12)"/><line x1="12" y1="6.6" x2="12" y2="3.2" transform="rotate(240 12 12)"/><line x1="12" y1="6.6" x2="12" y2="4.5" transform="rotate(270 12 12)"/><line x1="12" y1="6.6" x2="12" y2="3.4" transform="rotate(300 12 12)"/><line x1="12" y1="6.6" x2="12" y2="4.7" transform="rotate(330 12 12)"/></g></svg></div>
+      <div><h1><span>NeuralMix Pro</span></h1><div class="sub" data-i18n="tagline">Mezclador DJ con IA · 2-4 decks · stems · FX</div></div></div>
+    <div class="spacer"></div>
+    <div class="pill" id="statusPill"><span class="dot"></span><span id="statusText">…</span></div>
+    <button class="hbtn" id="settingsBtn" title="Ajustes / idioma">⚙</button>
+    <button class="hbtn" id="deck4Btn" title="Mostrar/ocultar Decks C y D (4 decks)">🎛 4 Decks</button>
+    <button class="hbtn" id="micBtn" title="Micrófono (entrada en vivo)">🎤</button>
+    <button class="hbtn" id="vizBtn" title="Visualizador / proyección">🎆</button>
+    <button class="hbtn" id="safeBtn" title="Modo seguro (evita cierre accidental)">🛡️</button>
+    <button class="hbtn heart" id="supportBtn" data-i18n="support">❤ Apoyar</button><button class="hbtn" id="aboutBtn">ⓘ</button>
+  </header>
+
+  <div class="vizoverlay" id="vizOverlay">
+    <video id="vizCam" autoplay muted playsinline></video>
+    <canvas id="vizCanvas"></canvas>
+    <div class="vizbrand"><span>NeuralMix Pro</span></div>
+    <div class="vizctrls">
+      <button id="vizStyle" title="Cambiar efecto">🎨 Efecto</button>
+      <button id="vizCamBtn" title="Webcam de fondo (para grabar pantalla / streaming)">📷 Webcam</button>
+      <button id="vizFull" title="Pantalla completa limpia (sin botones)">⛶ Pantalla completa</button>
+    </div>
+    <button class="vizclose" id="vizClose" title="Volver a la app (Esc)">✕ Volver</button>
+  </div>
+
+  <main>
+    <div class="left">
+      <!-- WAVEFORMS estilo Serato -->
+      <div class="waves">
+        <div class="wlane A" data-deck="A"><canvas class="wave" data-deck="A"></canvas>
+          <div class="winfo"><span class="dl">A</span><span class="nm" data-f="name">vacío</span><span class="cam" data-f="cam">—</span><span class="tm" data-f="bpm">—</span><span class="tm" data-f="time">0:00/0:00</span></div></div>
+        <div class="wlane B" data-deck="B"><canvas class="wave" data-deck="B"></canvas>
+          <div class="winfo"><span class="dl">B</span><span class="nm" data-f="name">vacío</span><span class="cam" data-f="cam">—</span><span class="tm" data-f="bpm">—</span><span class="tm" data-f="time">0:00/0:00</span></div></div>
+      </div>
+
+      <!-- MINI-VISUALIZADOR central (siempre activo) -->
+      <div class="miniviz"><canvas id="miniViz"></canvas></div>
+
+      <!-- CONSOLA: deck A | mixer | deck B -->
+      <div class="console">
+        <div class="deckpanel A" data-deck="A">
+          <div class="jogwrap"><canvas class="jog" data-deck="A"></canvas>
+            <div class="jogbtns"><button class="tbtn cue" data-act="cue">CUE</button></div></div>
+          <div class="dcol">
+            <div class="row"><button class="tbtn play" data-act="play">▶ PLAY</button><button class="tbtn sync" data-act="sync">SYNC</button><button class="tbtn key" data-act="keylock" title="Key Lock (tempo sin cambiar el tono)">🔒</button></div>
+            <div class="row"><span class="lbl">TEMPO</span><input class="tempo" type="range" data-act="tempo" min="-8" max="8" step="0.1" value="0"><span class="lbl" data-f="tempo">0.0%</span></div>
+            <div class="row perf"><span class="lbl">JOG</span><button class="pad" data-act="bj-4" title="Beat jump -4">«4</button><button class="pad" data-act="bend-" title="Pitch bend -">◄</button><button class="pad" data-act="brake" title="Brake (freno)">BRK</button><button class="pad" data-act="bend+" title="Pitch bend +">►</button><button class="pad" data-act="bj4" title="Beat jump +4">4»</button></div>
+            <div class="fx"><span class="lbl">FX</span><select data-fx="type"><option value="echo">Echo</option><option value="reverb">Reverb</option><option value="flanger">Flanger</option><option value="phaser">Phaser</option></select><input type="range" data-fx="amt" min="0" max="1" step="0.01" value="0"></div>
+            <div class="pads"><span class="lbl">CUE</span><button class="pad" data-cue="0">1</button><button class="pad" data-cue="1">2</button><button class="pad" data-cue="2">3</button><button class="pad" data-cue="3">4</button><span class="lbl">LOOP</span><button class="pad loop" data-loop="4">4</button><button class="pad loop" data-loop="8">8</button></div>
+            <div class="pads"><span class="lbl">STEMS</span><button class="pad stem on" data-stem="vocals">Voz</button><button class="pad stem on" data-stem="drums">Bat</button><button class="pad stem on" data-stem="bass">Bajo</button><button class="pad stem on" data-stem="other">Otr</button><span class="lbl" data-f="stemstate"></span></div>
+          </div>
+        </div>
+
+        <div class="mix">
+          <div class="chs">
+            <div class="ch"><span class="kl">Trim</span><input type="range" data-strip="A" data-ch="trim" min="0" max="1.5" step="0.01" value="1"></div>
+            <div class="ch"><span class="kl">VolA</span><input type="range" data-strip="A" data-ch="vol" min="0" max="1" step="0.01" value="0.85"></div>
+            <div class="ch"><span class="kl">Hi</span><input type="range" data-strip="A" data-ch="high" min="-26" max="10" step="1" value="0"></div>
+            <div class="ch"><span class="kl">Mid</span><input type="range" data-strip="A" data-ch="mid" min="-26" max="10" step="1" value="0"></div>
+            <div class="ch"><span class="kl">Lo</span><input type="range" data-strip="A" data-ch="low" min="-26" max="10" step="1" value="0"></div>
+            <div class="ch"><span class="kl">Filt</span><input type="range" data-strip="A" data-ch="filter" min="-1" max="1" step="0.02" value="0"></div>
+          </div>
+          <div class="cmid">
+            <div class="mrow"><span class="xlbl">MST</span><input type="range" id="masterVol" min="0" max="1" step="0.01" value="0.9"></div>
+            <div class="vu"><i id="vu"></i></div>
+            <div class="mrow"><span class="xlbl">A</span><input type="range" id="xfader" min="0" max="1" step="0.01" value="0.5"><span class="xlbl">B</span></div>
+            <div class="cbtns"><button class="tbtn rec" id="recBtn">● REC</button><button class="tbtn auto" id="autoBtn">🤖 Auto</button></div>
+          </div>
+          <div class="chs">
+            <div class="ch"><span class="kl">Trim</span><input type="range" data-strip="B" data-ch="trim" min="0" max="1.5" step="0.01" value="1"></div>
+            <div class="ch"><span class="kl">VolB</span><input type="range" data-strip="B" data-ch="vol" min="0" max="1" step="0.01" value="0.85"></div>
+            <div class="ch"><span class="kl">Hi</span><input type="range" data-strip="B" data-ch="high" min="-26" max="10" step="1" value="0"></div>
+            <div class="ch"><span class="kl">Mid</span><input type="range" data-strip="B" data-ch="mid" min="-26" max="10" step="1" value="0"></div>
+            <div class="ch"><span class="kl">Lo</span><input type="range" data-strip="B" data-ch="low" min="-26" max="10" step="1" value="0"></div>
+            <div class="ch"><span class="kl">Filt</span><input type="range" data-strip="B" data-ch="filter" min="-1" max="1" step="0.02" value="0"></div>
+          </div>
+        </div>
+
+        <div class="deckpanel B" data-deck="B">
+          <div class="jogwrap"><canvas class="jog" data-deck="B"></canvas>
+            <div class="jogbtns"><button class="tbtn cue" data-act="cue">CUE</button></div></div>
+          <div class="dcol">
+            <div class="row"><button class="tbtn play" data-act="play">▶ PLAY</button><button class="tbtn sync" data-act="sync">SYNC</button><button class="tbtn key" data-act="keylock" title="Key Lock (tempo sin cambiar el tono)">🔒</button></div>
+            <div class="row"><span class="lbl">TEMPO</span><input class="tempo" type="range" data-act="tempo" min="-8" max="8" step="0.1" value="0"><span class="lbl" data-f="tempo">0.0%</span></div>
+            <div class="row perf"><span class="lbl">JOG</span><button class="pad" data-act="bj-4" title="Beat jump -4">«4</button><button class="pad" data-act="bend-" title="Pitch bend -">◄</button><button class="pad" data-act="brake" title="Brake (freno)">BRK</button><button class="pad" data-act="bend+" title="Pitch bend +">►</button><button class="pad" data-act="bj4" title="Beat jump +4">4»</button></div>
+            <div class="fx"><span class="lbl">FX</span><select data-fx="type"><option value="echo">Echo</option><option value="reverb">Reverb</option><option value="flanger">Flanger</option><option value="phaser">Phaser</option></select><input type="range" data-fx="amt" min="0" max="1" step="0.01" value="0"></div>
+            <div class="pads"><span class="lbl">CUE</span><button class="pad" data-cue="0">1</button><button class="pad" data-cue="1">2</button><button class="pad" data-cue="2">3</button><button class="pad" data-cue="3">4</button><span class="lbl">LOOP</span><button class="pad loop" data-loop="4">4</button><button class="pad loop" data-loop="8">8</button></div>
+            <div class="pads"><span class="lbl">STEMS</span><button class="pad stem on" data-stem="vocals">Voz</button><button class="pad stem on" data-stem="drums">Bat</button><button class="pad stem on" data-stem="bass">Bajo</button><button class="pad stem on" data-stem="other">Otr</button><span class="lbl" data-f="stemstate"></span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DECKS C / D (colapsable) -->
+      <div class="deck4" id="deck4" style="display:none">
+        <div class="waves">
+          <div class="wlane A" data-deck="C"><canvas class="wave" data-deck="C"></canvas>
+            <div class="winfo"><span class="dl">C</span><span class="nm" data-f="name">vacío</span><span class="cam" data-f="cam">—</span><span class="tm" data-f="bpm">—</span><span class="tm" data-f="time">0:00/0:00</span></div></div>
+          <div class="wlane B" data-deck="D"><canvas class="wave" data-deck="D"></canvas>
+            <div class="winfo"><span class="dl">D</span><span class="nm" data-f="name">vacío</span><span class="cam" data-f="cam">—</span><span class="tm" data-f="bpm">—</span><span class="tm" data-f="time">0:00/0:00</span></div></div>
+        </div>
+        <div class="console">
+          <div class="deckpanel A" data-deck="C">
+            <div class="jogwrap"><canvas class="jog" data-deck="C"></canvas><div class="jogbtns"><button class="tbtn cue" data-act="cue">CUE</button></div></div>
+            <div class="dcol">
+              <div class="row"><button class="tbtn play" data-act="play">▶ PLAY</button><button class="tbtn sync" data-act="sync">SYNC</button><button class="tbtn key" data-act="keylock" title="Key Lock">🔒</button></div>
+              <div class="row"><span class="lbl">TEMPO</span><input class="tempo" type="range" data-act="tempo" min="-8" max="8" step="0.1" value="0"><span class="lbl" data-f="tempo">0.0%</span></div>
+              <div class="row perf"><span class="lbl">JOG</span><button class="pad" data-act="bj-4">«4</button><button class="pad" data-act="bend-">◄</button><button class="pad" data-act="brake">BRK</button><button class="pad" data-act="bend+">►</button><button class="pad" data-act="bj4">4»</button></div>
+              <div class="fx"><span class="lbl">FX</span><select data-fx="type"><option value="echo">Echo</option><option value="reverb">Reverb</option><option value="flanger">Flanger</option><option value="phaser">Phaser</option></select><input type="range" data-fx="amt" min="0" max="1" step="0.01" value="0"></div>
+              <div class="pads"><span class="lbl">CUE</span><button class="pad" data-cue="0">1</button><button class="pad" data-cue="1">2</button><button class="pad" data-cue="2">3</button><button class="pad" data-cue="3">4</button><span class="lbl">LOOP</span><button class="pad loop" data-loop="4">4</button><button class="pad loop" data-loop="8">8</button></div>
+              <div class="pads"><span class="lbl">STEMS</span><button class="pad stem on" data-stem="vocals">Voz</button><button class="pad stem on" data-stem="drums">Bat</button><button class="pad stem on" data-stem="bass">Bajo</button><button class="pad stem on" data-stem="other">Otr</button><span class="lbl" data-f="stemstate"></span></div>
+            </div>
+          </div>
+          <div class="mix">
+            <div class="chs">
+              <div class="ch"><span class="kl">Trim</span><input type="range" data-strip="C" data-ch="trim" min="0" max="1.5" step="0.01" value="1"></div>
+              <div class="ch"><span class="kl">VolC</span><input type="range" data-strip="C" data-ch="vol" min="0" max="1" step="0.01" value="0.85"></div>
+              <div class="ch"><span class="kl">Hi</span><input type="range" data-strip="C" data-ch="high" min="-26" max="10" step="1" value="0"></div>
+              <div class="ch"><span class="kl">Mid</span><input type="range" data-strip="C" data-ch="mid" min="-26" max="10" step="1" value="0"></div>
+              <div class="ch"><span class="kl">Lo</span><input type="range" data-strip="C" data-ch="low" min="-26" max="10" step="1" value="0"></div>
+              <div class="ch"><span class="kl">Filt</span><input type="range" data-strip="C" data-ch="filter" min="-1" max="1" step="0.02" value="0"></div>
+            </div>
+            <div class="cmid"><span class="xlbl">DECKS</span><span class="xlbl" style="font-size:9px;color:var(--muted2)">C / D suenan a su volumen</span></div>
+            <div class="chs">
+              <div class="ch"><span class="kl">Trim</span><input type="range" data-strip="D" data-ch="trim" min="0" max="1.5" step="0.01" value="1"></div>
+              <div class="ch"><span class="kl">VolD</span><input type="range" data-strip="D" data-ch="vol" min="0" max="1" step="0.01" value="0.85"></div>
+              <div class="ch"><span class="kl">Hi</span><input type="range" data-strip="D" data-ch="high" min="-26" max="10" step="1" value="0"></div>
+              <div class="ch"><span class="kl">Mid</span><input type="range" data-strip="D" data-ch="mid" min="-26" max="10" step="1" value="0"></div>
+              <div class="ch"><span class="kl">Lo</span><input type="range" data-strip="D" data-ch="low" min="-26" max="10" step="1" value="0"></div>
+              <div class="ch"><span class="kl">Filt</span><input type="range" data-strip="D" data-ch="filter" min="-1" max="1" step="0.02" value="0"></div>
+            </div>
+          </div>
+          <div class="deckpanel B" data-deck="D">
+            <div class="jogwrap"><canvas class="jog" data-deck="D"></canvas><div class="jogbtns"><button class="tbtn cue" data-act="cue">CUE</button></div></div>
+            <div class="dcol">
+              <div class="row"><button class="tbtn play" data-act="play">▶ PLAY</button><button class="tbtn sync" data-act="sync">SYNC</button><button class="tbtn key" data-act="keylock" title="Key Lock">🔒</button></div>
+              <div class="row"><span class="lbl">TEMPO</span><input class="tempo" type="range" data-act="tempo" min="-8" max="8" step="0.1" value="0"><span class="lbl" data-f="tempo">0.0%</span></div>
+              <div class="row perf"><span class="lbl">JOG</span><button class="pad" data-act="bj-4">«4</button><button class="pad" data-act="bend-">◄</button><button class="pad" data-act="brake">BRK</button><button class="pad" data-act="bend+">►</button><button class="pad" data-act="bj4">4»</button></div>
+              <div class="fx"><span class="lbl">FX</span><select data-fx="type"><option value="echo">Echo</option><option value="reverb">Reverb</option><option value="flanger">Flanger</option><option value="phaser">Phaser</option></select><input type="range" data-fx="amt" min="0" max="1" step="0.01" value="0"></div>
+              <div class="pads"><span class="lbl">CUE</span><button class="pad" data-cue="0">1</button><button class="pad" data-cue="1">2</button><button class="pad" data-cue="2">3</button><button class="pad" data-cue="3">4</button><span class="lbl">LOOP</span><button class="pad loop" data-loop="4">4</button><button class="pad loop" data-loop="8">8</button></div>
+              <div class="pads"><span class="lbl">STEMS</span><button class="pad stem on" data-stem="vocals">Voz</button><button class="pad stem on" data-stem="drums">Bat</button><button class="pad stem on" data-stem="bass">Bajo</button><button class="pad stem on" data-stem="other">Otr</button><span class="lbl" data-f="stemstate"></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SAMPLER -->
+      <div class="sampler"><span class="slbl">SAMPLER<br>/ SFX</span><div class="spads" id="spads"></div></div>
+
+      <!-- LIBRARY -->
+      <div class="libwrap">
+        <div class="libhead"><h2 data-i18n="library">Librería</h2><button class="hbtn" id="folderBtn" title="Abrir carpeta (varias a la vez)" data-i18n="openFolder">📁 Carpeta</button><input class="search" id="libSearch" data-i18n-ph="searchPh" placeholder="🔍 Buscar título / BPM / tono…"><span class="lbl" id="libCount">0</span></div>
+        <div class="sources" id="sources"></div>
+        <div class="drop" id="drop" data-i18n="drop">🎵 Arrastra música aquí o haz clic para añadir y analizar</div>
+        <div class="libtbl"><table><thead><tr><th>Track</th><th style="width:54px">BPM</th><th style="width:44px">Key</th><th style="width:215px">Cargar</th></tr></thead>
+          <tbody id="libBody"><tr><td colspan="4" class="empty">Sin música. Arrastra canciones.</td></tr></tbody></table></div>
+      </div>
+    </div>
+
+    <div class="right">
+      <div class="cphead"><span style="font-size:15px">🤖</span><h2>Co-Pilot</h2></div>
+      <div class="cpbody" id="cpBody"><div class="cpempty" data-i18n="cpEmpty">Carga un track a un deck y el Co-Pilot sugerirá el siguiente para mezclar.</div></div>
+    </div>
+  </main>
+
+  <footer><div class="info" id="footInfo">Listo.</div></footer>
+
+  <div class="overlay" id="mSupport"><div class="modal">
+    <h3>❤ Apoya NeuralMix Pro</h3><div class="by">Desarrollado por <b>Enmanuel Gil</b> · OptiSuite · Sin ads ni telemetría.</div>
+    <div class="links"><a href="#" class="ext" data-url="https://optisuite.app">🌐 optisuite.app</a><a href="#" class="ext" data-url="https://github.com/EnMaNueL-G">💻 GitHub</a></div>
+    <div class="links"><a href="#" class="ext" data-url="https://ko-fi.com/optisuite" style="background:#13C3FF;color:#04121a;border-color:#13C3FF;font-weight:700">☕ Ko-fi</a><a href="#" class="ext" data-url="https://liberapay.com/OptiSuite.app" style="background:#F6C915;color:#2a2400;border-color:#F6C915;font-weight:700">💛 Liberapay</a></div>
+    <div class="by" style="margin:4px 0 7px">O con cripto (copiable):</div>
+    <div class="mrow2"><div class="lbl2">Binance Pay</div><div class="val" id="cpBinance">1140153333</div><button class="copy" data-copy="cpBinance">Copiar</button></div>
+    <div class="mrow2"><div class="lbl2">USDT (BSC)</div><div class="val" id="cpBsc">0x0a9a0d8d816ede885d1d4a5c94369a72ef86b3c1</div><button class="copy" data-copy="cpBsc">Copiar</button></div>
+    <button class="close" data-close>Cerrar</button>
+  </div></div>
+  <div class="overlay" id="mSettings"><div class="modal">
+    <h3 data-i18n="settings">⚙ Ajustes</h3>
+    <div class="by" data-i18n="settingsSub">Idioma, tema y preferencias. Se guardan en este equipo.</div>
+    <div class="srow"><span class="slbl2" data-i18n="language">Idioma</span>
+      <div class="seg2" id="langSeg"><button data-v="es">Español</button><button data-v="en">English</button></div></div>
+    <div class="srow"><span class="slbl2" data-i18n="miniviz">Mini-visualizador en la ventana</span>
+      <div class="seg2" id="miniSeg"><button data-v="on" data-i18n="show">Mostrar</button><button data-v="off" data-i18n="hide">Ocultar</button></div></div>
+    <div class="srow"><span class="slbl2" data-i18n="theme">Tema (color de acento)</span>
+      <div class="themes" id="themeRow">
+        <button class="tdot" data-a="#d946ef" data-b="#22d3ee" title="Fucsia · Cian" style="background:linear-gradient(135deg,#d946ef,#22d3ee)"></button>
+        <button class="tdot" data-a="#7c3aed" data-b="#06b6d4" title="Violeta · Cian" style="background:linear-gradient(135deg,#7c3aed,#06b6d4)"></button>
+        <button class="tdot" data-a="#10b981" data-b="#22d3ee" title="Esmeralda · Cian" style="background:linear-gradient(135deg,#10b981,#22d3ee)"></button>
+        <button class="tdot" data-a="#f59e0b" data-b="#ef4444" title="Ámbar · Rojo" style="background:linear-gradient(135deg,#f59e0b,#ef4444)"></button>
+        <button class="tdot" data-a="#3b82f6" data-b="#22d3ee" title="Azul · Cian" style="background:linear-gradient(135deg,#3b82f6,#22d3ee)"></button>
+      </div></div>
+    <button class="close" data-close data-i18n="close">Cerrar</button>
+  </div></div>
+
+  <div class="overlay" id="mAbout"><div class="modal">
+    <h3><span style="background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent">NeuralMix Pro</span></h3>
+    <div class="by">Mezclador DJ con IA · 100% local · v1.0</div>
+    <div class="note" style="font-size:12px;color:var(--text)">Hasta 4 decks estilo Serato (waveforms a color + jog con BPM), EQ+Kill+Filtro+Trim, crossfader, tempo + Key Lock (WSOLA), FX (echo/reverb/flanger/phaser), faders por stem (Demucs), hot cues, loops, sampler/SFX, grabación, micrófono, visualizador (con webcam) y Co-Pilot de mezcla armónica. 100% local.</div>
+    <div class="note">Honesto: Web Audio (~20-50ms) → casa/práctica/streaming; no cabina de club Pioneer. Stems pre-separados. Sin vídeo/DVS/Pioneer Link/streaming de pago.</div>
+    <button class="close" data-close>Cerrar</button>
+  </div></div>
+
+  <script src="engine.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
