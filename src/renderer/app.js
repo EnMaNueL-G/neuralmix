@@ -1,4 +1,4 @@
-// NeuralMix Pro - renderer (mezclador DJ estilo Serato: 2 decks, waveform color, jog, FX, Co-Pilot).
+// NeuralMix Pro - renderer (mezclador DJ profesional: 2 decks, waveform color, jog, FX, Co-Pilot).
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
@@ -77,7 +77,7 @@ function resetDeckControls(side) {
   setPlayBtn(side, false);
 }
 
-// ---------- waveform scrolling (estilo Serato) ----------
+// ---------- waveform scrolling (desplazamiento de la onda) ----------
 function drawWave(side) {
   const cv = document.querySelector(`canvas.wave[data-deck="${side}"]`); if (!cv || cv.offsetParent === null) return;
   const dpr = window.devicePixelRatio || 1, w = cv.clientWidth || 600, h = cv.clientHeight || 90;
@@ -117,7 +117,7 @@ function drawJog(side) {
   ctx.strokeStyle = e.playing ? '#fff' : '#666'; ctx.lineWidth = 3; ctx.beginPath();
   ctx.moveTo(cx + Math.cos(ang) * R * 0.58, cy + Math.sin(ang) * R * 0.58);
   ctx.lineTo(cx + Math.cos(ang) * R * 0.86, cy + Math.sin(ang) * R * 0.86); ctx.stroke();
-  // BPM + pitch en el centro (estilo CDJ)
+  // BPM + pitch en el centro del jog
   if (state.deck[side]) {
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillStyle = '#fff'; ctx.font = 'bold 14px Segoe UI';

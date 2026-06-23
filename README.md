@@ -12,11 +12,11 @@
 
 ---
 
-NeuralMix Pro es un mezclador de DJ de escritorio que se ejecuta **enteramente en tu equipo**. Mantiene el flujo familiar de Serato / Rekordbox / VirtualDJ, pero su diferencia está en el **Co-Pilot de IA** que entiende tu música (armonía, BPM, energía y *similitud de audio real*) y te sugiere qué pinchar después y cómo mezclarlo — algo que ningún otro hace con esta profundidad. Y todo gratis y privado.
+NeuralMix Pro es un mezclador de DJ de escritorio que se ejecuta **enteramente en tu equipo**. Mantiene el flujo familiar de un software de DJ profesional, pero su diferencia está en el **Co-Pilot de IA** que entiende tu música (armonía, BPM, energía y *similitud de audio real*) y te sugiere qué pinchar después y cómo mezclarlo — algo que ningún otro hace con esta profundidad. Y todo gratis y privado.
 
 ## ✨ Funciones
 
-- **Hasta 4 decks** con waveform a color por frecuencia (estilo Serato) y **jog wheels** con BPM en el centro.
+- **Hasta 4 decks** con waveform a color por frecuencia y **jog wheels** con BPM en el centro.
 - **Key Lock / Master Tempo** (time-stretch WSOLA): cambia el tempo **sin alterar el tono**.
 - **SYNC**, pitch bend, beat jump, brake, hot cues, loops.
 - **EQ de 3 bandas + Kill + Filtro + Trim**, crossfader equal-power, master + VU.
@@ -37,7 +37,7 @@ NeuralMix Pro es un mezclador de DJ de escritorio que se ejecuta **enteramente e
 
 ## ⚖️ Honestidad técnica
 
-NeuralMix está pensado para **casa, práctica, streaming, bares y DJs móviles**. El motor Web Audio tiene una latencia de ~20-50 ms, por lo que **no sustituye una cabina de club con CDJs Pioneer** (que requieren <5 ms y hardware nativo). No incluye vídeo, DMX, timecode de vinilo ni streaming de plataformas de pago — eso pertenece a los ecosistemas comerciales. Aquí prioritzamos un mezclador **local, libre y honesto**, con la mejor inteligencia musical.
+NeuralMix está pensado para **casa, práctica, streaming, bares y DJs móviles**. El motor Web Audio tiene una latencia de ~20-50 ms, por lo que **no sustituye una cabina de club profesional** (que requiere <5 ms y hardware dedicado). No incluye vídeo, DMX, timecode de vinilo ni streaming de plataformas de pago — eso pertenece a los ecosistemas comerciales. Aquí prioritzamos un mezclador **local, libre y honesto**, con la mejor inteligencia musical.
 
 ## 🚀 Uso (desde código)
 

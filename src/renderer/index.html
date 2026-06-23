@@ -49,7 +49,7 @@
   .left.has4{overflow-y:auto}
   .right{flex:0 0 300px;border-left:1px solid var(--border);background:var(--bg2);display:flex;flex-direction:column;min-height:0}
 
-  /* WAVEFORMS (estilo Serato) */
+  /* WAVEFORMS (a color por frecuencia) */
   .waves{flex:0 0 auto;padding:8px 8px 0;display:flex;flex-direction:column;gap:5px}
   .wlane{position:relative;height:72px;background:#05050c;border:1px solid var(--border);border-radius:8px;overflow:hidden}
   .wlane canvas{position:absolute;inset:0;width:100%;height:100%;cursor:pointer}
@@ -216,7 +216,7 @@
 
   <main>
     <div class="left">
-      <!-- WAVEFORMS estilo Serato -->
+      <!-- WAVEFORMS a color -->
       <div class="waves">
         <div class="wlane A" data-deck="A"><canvas class="wave" data-deck="A"></canvas>
           <div class="winfo"><span class="dl">A</span><span class="nm" data-f="name">vacío</span><span class="cam" data-f="cam">—</span><span class="tm" data-f="bpm">—</span><span class="tm" data-f="time">0:00/0:00</span></div></div>
@@ -385,8 +385,8 @@
   <div class="overlay" id="mAbout"><div class="modal">
     <h3><span style="background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent">NeuralMix Pro</span></h3>
     <div class="by">Mezclador DJ con IA · 100% local · v1.0</div>
-    <div class="note" style="font-size:12px;color:var(--text)">Hasta 4 decks estilo Serato (waveforms a color + jog con BPM), EQ+Kill+Filtro+Trim, crossfader, tempo + Key Lock (WSOLA), FX (echo/reverb/flanger/phaser), faders por stem (Demucs), hot cues, loops, sampler/SFX, grabación, micrófono, visualizador (con webcam) y Co-Pilot de mezcla armónica. 100% local.</div>
-    <div class="note">Honesto: Web Audio (~20-50ms) → casa/práctica/streaming; no cabina de club Pioneer. Stems pre-separados. Sin vídeo/DVS/Pioneer Link/streaming de pago.</div>
+    <div class="note" style="font-size:12px;color:var(--text)">Hasta 4 decks profesionales (waveforms a color + jog con BPM), EQ+Kill+Filtro+Trim, crossfader, tempo + Key Lock (WSOLA), FX (echo/reverb/flanger/phaser), faders por stem (Demucs), hot cues, loops, sampler/SFX, grabación, micrófono, visualizador (con webcam) y Co-Pilot de mezcla armónica. 100% local.</div>
+    <div class="note">Honesto: Web Audio (~20-50ms) → casa/práctica/streaming; no cabina de club profesional. Stems pre-separados. Sin vídeo/DVS/enlace de cabina propietario/streaming de pago.</div>
     <button class="close" data-close>Cerrar</button>
   </div></div>
 
